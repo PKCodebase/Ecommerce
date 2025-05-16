@@ -1,9 +1,9 @@
 package com.ecommerce.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Product {
@@ -21,6 +21,9 @@ public class Product {
     private String category;
 
     private String brand;
+
+    @ManyToMany(mappedBy = "products")
+    private Set<Cart> carts = new HashSet<>();
 
     public Long getId() {
         return id;

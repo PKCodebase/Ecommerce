@@ -27,4 +27,23 @@ public class ProductController {
     public ResponseEntity<List<Product>> getAllProduct(){
         return ResponseEntity.ok(productService.getAll());
     }
+
+    @GetMapping("/{name}")
+    public ResponseEntity<Product> getProductByName(@PathVariable String name){
+        Product product =productService.getByName(name);
+        return ResponseEntity.status(HttpStatus.OK).body(product);
+    }
+
+    @PutMapping("/{productId}")
+    public ResponseEntity<Product> updateProducts(@PathVariable Long productId, @RequestBody Product updatedProduct){
+        return ResponseEntity.ok(productService.update(productId,updatedProduct));
+    }
+
+    @DeleteMapping("/{productId}")
+    public String deleteProduct(@PathVariable Long productId){
+        productService.delete(productId);
+        return "Product Deleted Successfully";
+
+    }
+
 }

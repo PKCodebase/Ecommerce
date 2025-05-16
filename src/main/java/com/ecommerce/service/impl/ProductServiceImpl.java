@@ -1,6 +1,7 @@
 package com.ecommerce.service.impl;
 
 import com.ecommerce.entity.Product;
+import com.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.ProductService;
 import org.springframework.stereotype.Service;
@@ -28,21 +29,28 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getByName(String name) {
-        return productRepository.findByName(name);
+        return productRepository.findByNameIgnoreCase(name)
+                .orElseThrow(()->  new ResourceNotFoundException("Product not available"));
     }
 
     @Override
-    public Product update(Product product, Long productId) {
-        return null;
+    public Product update(Long productId, Product product) {
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(()-> new ResourceNotFoundException("Product not found"));
+        existingProduct.setName(product.getName());
+        existingProduct.setDescription(product.getDescription());
+        existingProduct.setPrice(product.getPrice());
+        existingProduct.setCategory(product.getCategory());
+        existingProduct.setPrice(product.getPrice());
+        existingProduct.setBrand(product.getBrand());
+        return productRepository.save(existingProduct);
     }
-
     @Override
     public void delete(Long productId) {
-
+     Product existingProduct = productRepository.findById(productId)
+             .orElseThrow(()->new ResourceNotFoundException("Product not available"));
+        productRepository.delete(existingProduct);
     }
 
-    @Override
-    public void deleteByName(String name) {
 
-    }
 }
