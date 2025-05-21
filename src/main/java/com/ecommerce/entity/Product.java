@@ -22,6 +22,8 @@ public class Product {
 
     private String brand;
 
+    private Integer quantity;
+
     @ManyToMany(mappedBy = "products")
     private Set<Cart> carts = new HashSet<>();
 
@@ -71,6 +73,22 @@ public class Product {
 
     public void setBrand(String brand) {
         this.brand = brand;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Set<Cart> getCarts() {
+        return carts;
+    }
+
+    public void setCarts(Set<Cart> carts) {
+        this.carts = carts;
     }
 
     public Product() {

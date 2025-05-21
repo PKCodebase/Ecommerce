@@ -1,5 +1,6 @@
 package com.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -20,9 +21,21 @@ public class Cart {
 
     private Double totalPrice;
 
+    @JsonIgnore
     @ManyToMany
     private Set<Product> products = new HashSet<>();
 
+    public Cart() {
+    }
+
+    public Cart(Long id, Long productId, Integer quantity, Double price, Double totalPrice, Set<Product> products) {
+        this.id = id;
+        this.productId = productId;
+        this.quantity = quantity;
+        this.price = price;
+        this.totalPrice = totalPrice;
+        this.products = products;
+    }
 
     public Long getId() {
         return id;
@@ -70,5 +83,27 @@ public class Cart {
 
     public void setProducts(Set<Product> products) {
         this.products = products;
+    }
+
+    public void addProduct(Product product, int quantity) {
+        this.products.add(product);
+        this.quantity = quantity;
+        this.price = product.getPrice();
+        this.totalPrice = product.getPrice() * quantity;
+    }
+
+    public void removeProduct(Long productId, int quantity) {
+        Product productToRemove = null;
+        for (Product product : this.products) {
+            if (product.getId().equals(productId)) {
+                productToRemove = product;
+                break;
+            }
+        }
+        if (productToRemove != null) {
+            this.products.remove(productToRemove);
+            this.quantity -= quantity;
+            this.totalPrice -= productToRemove.getPrice() * quantity;
+        }
     }
 }
