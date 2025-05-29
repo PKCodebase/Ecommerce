@@ -1,13 +1,16 @@
 package com.ecommerce.service.impl;
 
 import com.ecommerce.entity.Cart;
+import com.ecommerce.entity.CartItem;
 import com.ecommerce.entity.Product;
 import com.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.repository.CartItemRepository;
 import com.ecommerce.repository.CartRepository;
 import com.ecommerce.repository.ProductRepository;
 import com.ecommerce.service.CartService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -17,53 +20,97 @@ public class CartServiceImpl implements CartService {
 
     private final ProductRepository productRepository;
 
-    public CartServiceImpl(CartRepository cartRepository, ProductRepository productRepository) {
+    private final CartItemRepository cartItemRepository;
+
+    public CartServiceImpl(CartRepository cartRepository, ProductRepository productRepository, CartItemRepository cartItemRepository) {
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
+        this.cartItemRepository = cartItemRepository;
     }
-
 
     @Override
     public void addProductToCart(Long productId, int quantity) {
-
         Product product = productRepository.findById(productId)
-                .orElseThrow(()->new ResourceNotFoundException("Product not available"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        if (product.getQuantity() < quantity) {
-            throw new RuntimeException("Insufficient stock");
+        Cart cart = cartRepository.findAll().stream().findFirst().orElse(null);
+
+        if (cart == null) {
+            cart = new Cart();
+            cart.setCartItems(new ArrayList<>());
+            cart.setTotalPrice(0.0);
+            cart = cartRepository.save(cart); // Save the new cart
         }
-        Cart cart = cartRepository.findById(productId)
-                .orElseGet(Cart::new);
 
-        cart.addProduct(product, quantity);
+        CartItem existingItem = cart.getCartItems()
+                .stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElse(null);
+
+        if (existingItem != null) {
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            existingItem.setTotalPrice(existingItem.getQuantity() * product.getPrice());
+        } else {
+            CartItem newItem = new CartItem(product, quantity);
+            newItem.setTotalPrice(quantity * product.getPrice());
+            newItem.setCart(cart);
+            cart.getCartItems().add(newItem);
+        }
+
+        updateCartTotal(cart);
         cartRepository.save(cart);
     }
 
     @Override
     public void removeProductFromCart(Long productId, int quantity) {
-        Cart cart = cartRepository.findById(productId)
-                .orElseThrow(()->new ResourceNotFoundException("Product not available in cart"));
+      Cart cart = cartRepository.findAll()
+              .stream()
+              .findFirst()
+              .orElseThrow(()->
+                      new ResourceNotFoundException("Cart Not found"));
 
-        if (cart.getQuantity() < quantity) {
-            throw new RuntimeException("Insufficient quantity in cart");
-        }
+      CartItem existingItem = cart.getCartItems()
+              .stream()
+              .filter(item -> item.getProduct().getId().equals(productId))
+              .findFirst()
+              .orElseThrow(()->
+                      new ResourceNotFoundException("No any Product available in cart"));
 
-        cart.removeProduct(productId, quantity);
-        if (cart.getQuantity() == 0) {
-            cartRepository.delete(cart);
+        if (existingItem.getQuantity() > quantity) {
+            existingItem.setQuantity(existingItem.getQuantity() - quantity);
+            existingItem.setTotalPrice(existingItem.getQuantity() * existingItem.getProduct().getPrice());
         } else {
-            cartRepository.save(cart);
+            cart.getCartItems().remove(existingItem);
+            cartItemRepository.delete(existingItem);
         }
+
+        updateCartTotal(cart);
+        cartRepository.save(cart);
     }
+
 
     @Override
     public void clearCart() {
-        cartRepository.deleteAll();
+        Cart cart = cartRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
+        cart.getCartItems().clear();
+        cart.setTotalPrice(0.0);
+        cartRepository.save(cart);
     }
 
     @Override
     public List<Cart> getCart() {
         return cartRepository.findAll();
+    }
+
+
+    private void updateCartTotal(Cart cart) {
+        double total = cart.getCartItems()
+                .stream()
+                .mapToDouble(CartItem::getTotalPrice)
+                .sum();
+        cart.setTotalPrice(total);
     }
 }

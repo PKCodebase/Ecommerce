@@ -2,7 +2,9 @@ package com.ecommerce.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -24,8 +26,8 @@ public class Product {
 
     private Integer quantity;
 
-    @ManyToMany(mappedBy = "products")
-    private Set<Cart> carts = new HashSet<>();
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CartItem> cartItems = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -83,22 +85,11 @@ public class Product {
         this.quantity = quantity;
     }
 
-    public Set<Cart> getCarts() {
-        return carts;
+    public List<CartItem> getCartItems() {
+        return cartItems;
     }
 
-    public void setCarts(Set<Cart> carts) {
-        this.carts = carts;
+    public void setCartItems(List<CartItem> cartItems) {
+        this.cartItems = cartItems;
     }
-
-    public Product() {
-    }
-    public Product(String name, String description, Double price, String category, String brand) {
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.category = category;
-        this.brand = brand;
-    }
-
 }

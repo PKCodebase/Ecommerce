@@ -3,8 +3,11 @@ package com.ecommerce.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
 
 @Entity
 public class Cart {
@@ -13,28 +16,23 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long productId;
+    // You can add userId here if needed (in case user login is implemented)
+    private Double totalPrice = 0.0;
 
-    private Integer quantity;
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CartItem> cartItems = new ArrayList<>();
 
-    private Double price;
+    public Cart() {}
 
-    private Double totalPrice;
-
-    @JsonIgnore
-    @ManyToMany
-    private Set<Product> products = new HashSet<>();
-
-    public Cart() {
+    // Add helper methods for managing items
+    public void addCartItem(CartItem item) {
+        cartItems.add(item);
+        item.setCart(this);
     }
 
-    public Cart(Long id, Long productId, Integer quantity, Double price, Double totalPrice, Set<Product> products) {
-        this.id = id;
-        this.productId = productId;
-        this.quantity = quantity;
-        this.price = price;
-        this.totalPrice = totalPrice;
-        this.products = products;
+    public void removeCartItem(CartItem item) {
+        cartItems.remove(item);
+        item.setCart(null);
     }
 
     public Long getId() {
@@ -45,30 +43,6 @@ public class Cart {
         this.id = id;
     }
 
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
     public Double getTotalPrice() {
         return totalPrice;
     }
@@ -77,33 +51,11 @@ public class Cart {
         this.totalPrice = totalPrice;
     }
 
-    public Set<Product> getProducts() {
-        return products;
+    public List<CartItem> getCartItems() {
+        return cartItems;
     }
 
-    public void setProducts(Set<Product> products) {
-        this.products = products;
-    }
-
-    public void addProduct(Product product, int quantity) {
-        this.products.add(product);
-        this.quantity = quantity;
-        this.price = product.getPrice();
-        this.totalPrice = product.getPrice() * quantity;
-    }
-
-    public void removeProduct(Long productId, int quantity) {
-        Product productToRemove = null;
-        for (Product product : this.products) {
-            if (product.getId().equals(productId)) {
-                productToRemove = product;
-                break;
-            }
-        }
-        if (productToRemove != null) {
-            this.products.remove(productToRemove);
-            this.quantity -= quantity;
-            this.totalPrice -= productToRemove.getPrice() * quantity;
-        }
+    public void setCartItems(List<CartItem> cartItems) {
+        this.cartItems = cartItems;
     }
 }
