@@ -17,12 +17,12 @@ import java.util.List;
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
-
     private final ProductRepository productRepository;
-
     private final CartItemRepository cartItemRepository;
 
-    public CartServiceImpl(CartRepository cartRepository, ProductRepository productRepository, CartItemRepository cartItemRepository) {
+    public CartServiceImpl(CartRepository cartRepository,
+                           ProductRepository productRepository,
+                           CartItemRepository cartItemRepository) {
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
         this.cartItemRepository = cartItemRepository;
@@ -33,14 +33,10 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        Cart cart = cartRepository.findAll().stream().findFirst().orElse(null);
-
-        if (cart == null) {
-            cart = new Cart();
-            cart.setCartItems(new ArrayList<>());
-            cart.setTotalPrice(0.0);
-            cart = cartRepository.save(cart); // Save the new cart
-        }
+        Cart cart = cartRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Cart newCart = new Cart();
+            return cartRepository.save(newCart);
+        });
 
         CartItem existingItem = cart.getCartItems()
                 .stream()
@@ -53,7 +49,6 @@ public class CartServiceImpl implements CartService {
             existingItem.setTotalPrice(existingItem.getQuantity() * product.getPrice());
         } else {
             CartItem newItem = new CartItem(product, quantity);
-            newItem.setTotalPrice(quantity * product.getPrice());
             newItem.setCart(cart);
             cart.getCartItems().add(newItem);
         }
@@ -64,18 +59,16 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void removeProductFromCart(Long productId, int quantity) {
-      Cart cart = cartRepository.findAll()
-              .stream()
-              .findFirst()
-              .orElseThrow(()->
-                      new ResourceNotFoundException("Cart Not found"));
+        Cart cart = cartRepository.findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
-      CartItem existingItem = cart.getCartItems()
-              .stream()
-              .filter(item -> item.getProduct().getId().equals(productId))
-              .findFirst()
-              .orElseThrow(()->
-                      new ResourceNotFoundException("No any Product available in cart"));
+        CartItem existingItem = cart.getCartItems()
+                .stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Product not in cart"));
 
         if (existingItem.getQuantity() > quantity) {
             existingItem.setQuantity(existingItem.getQuantity() - quantity);
@@ -89,10 +82,11 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
-
     @Override
     public void clearCart() {
-        Cart cart = cartRepository.findAll().stream().findFirst()
+        Cart cart = cartRepository.findAll()
+                .stream()
+                .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         cart.getCartItems().clear();
@@ -101,14 +95,14 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public List<Cart> getCart() {
-        return cartRepository.findAll();
+    public Cart getCart() {
+        return cartRepository.findAll().stream()
+                .findFirst()
+                .orElseGet(() -> cartRepository.save(new Cart()));
     }
 
-
     private void updateCartTotal(Cart cart) {
-        double total = cart.getCartItems()
-                .stream()
+        double total = cart.getCartItems().stream()
                 .mapToDouble(CartItem::getTotalPrice)
                 .sum();
         cart.setTotalPrice(total);

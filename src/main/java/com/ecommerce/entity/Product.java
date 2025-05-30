@@ -1,5 +1,7 @@
 package com.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -9,25 +11,24 @@ import java.util.Set;
 
 @Entity
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-
     private String description;
-
     private Double price;
-
     private String category;
-
     private String brand;
-
     private Integer quantity;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<CartItem> cartItems = new ArrayList<>();
+
+    // Getters & Setters
+
+
 
     public Long getId() {
         return id;

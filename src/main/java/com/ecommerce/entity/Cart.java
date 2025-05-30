@@ -16,15 +16,11 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // You can add userId here if needed (in case user login is implemented)
     private Double totalPrice = 0.0;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
 
-    public Cart() {}
-
-    // Add helper methods for managing items
     public void addCartItem(CartItem item) {
         cartItems.add(item);
         item.setCart(this);
@@ -34,6 +30,12 @@ public class Cart {
         cartItems.remove(item);
         item.setCart(null);
     }
+
+
+
+
+    public Cart() {}
+
 
     public Long getId() {
         return id;
